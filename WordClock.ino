@@ -14,18 +14,24 @@ byte bcdToDec(byte val)
 }
 
 void setDate(byte second, byte minute, byte hour,  byte dayOfWeek, byte dayOfMonth, byte month, byte year) {
-   Wire.beginTransmission(DS1337_I2C_ADDRESS);
-   Wire.write(0);
+  Wire.beginTransmission(DS1337_I2C_ADDRESS);
+  Wire.write(0);
    
-   Wire.write(decToBcd(second));
-   Wire.write(decToBcd(minute));
-   Wire.write(decToBcd(hour));
-   Wire.write(decToBcd(dayOfWeek));
-   Wire.write(decToBcd(dayOfMonth));
-   Wire.write(decToBcd(month));
-   Wire.write(decToBcd(year));
+  Wire.write(decToBcd(second));
+  Wire.write(decToBcd(minute));
+  Wire.write(decToBcd(hour));
+  Wire.write(decToBcd(dayOfWeek));
+  Wire.write(decToBcd(dayOfMonth));
+  Wire.write(decToBcd(month));
+  Wire.write(decToBcd(year));
    
-   Wire.endTransmission();
+  Wire.endTransmission();
+
+  //Enable clock
+  Wire.beginTransmission(DS1337_I2C_ADDRESS);
+  Wire.write(0x0e);
+  Wire.write(0x00);
+  Wire.endTransmission(); 
 }
 
 void getDate(byte *second, byte *minute, byte *hour, byte *dayOfWeek, byte *dayOfMonth, byte *month, byte *year) {
@@ -39,12 +45,12 @@ void getDate(byte *second, byte *minute, byte *hour, byte *dayOfWeek, byte *dayO
   
   if (Wire.available() == 7){
     // A few of these need masks because certain bits are control bits
-    *second     = bcdToDec(Wire.read() & 0x7f);
+    *second     = bcdToDec(Wire.read());
     *minute     = bcdToDec(Wire.read());
-    *hour       = bcdToDec(Wire.read() & 0x3f); 
+    *hour       = bcdToDec(Wire.read() & 0b00111111); 
     *dayOfWeek  = bcdToDec(Wire.read());
     *dayOfMonth = bcdToDec(Wire.read());
-    *month      = bcdToDec(Wire.read());
+    *month      = bcdToDec(Wire.read() & 0b01111111);
     *year       = bcdToDec(Wire.read());
   } else {
     Serial.println("ERROR: Can't read shit, captain");
@@ -62,6 +68,7 @@ void setup() {
   setDate(1, 1, 1, 1, 1, 1, 1);
   
   Serial.println("WordClock stared!");
+
 }
 
 void loop() {
@@ -71,11 +78,24 @@ void loop() {
   Serial.println("Loop started");
   
   getDate(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);
+
+  Serial.print(hour, DEC);
   
-  Serial.print("Seconds: ");
-  Serial.println(second, DEC);
+  Serial.print(":");
+  Serial.print(minute, DEC);
+
+  Serial.print(":");
+  Serial.print(second, DEC);
+
+  Serial.print(" ");
+  
+  Serial.print(dayOfMonth, DEC);
+  Serial.print(".");
+  
+  Serial.print(month, DEC);
+  Serial.println(".");
     
   delay(1000);
-  
+
 }
 
