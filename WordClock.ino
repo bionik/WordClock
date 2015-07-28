@@ -14,6 +14,13 @@
 #define clockPin 5
 #define latchPin 6
 
+//Init shift register library as a global variable
+shiftOutX leds(latchPin, dataPin, clockPin, MSBFIRST, 3);
+
+//Button pressed state
+boolean buttonPressed = false;
+boolean timePrinted = false;
+
 // Convert normal decimal numbers to binary coded decimal
 byte decToBcd(byte val)
 {
@@ -100,9 +107,9 @@ void setup() {
 
   //Init serial
   Serial.begin(9600);
-  while (!Serial) {
+  /*while (!Serial) {
     ; //Waiting serial to start
-  }
+  }*/
 
   //Setup pins
   pinMode(minutePin, INPUT);
@@ -114,9 +121,6 @@ void setup() {
   //Init RTC
   setDate(0, 0, 0, 1, 1, 1, 0);
 
-  //Init shift register library
-  shiftOutX leds(latchPin, dataPin, clockPin, MSBFIRST, 3);
-
   leds.allOff();
   
   Serial.println("WordClock stared!");
@@ -127,66 +131,96 @@ void setupLeds(byte hours, byte minutes){
   leds.allOff();
 
   //it's
+  leds.pinOn(shPin1);
 
   byte minuteBlock = minutes / 5;
   switch (minuteBlock){
     case 0:
       //o'clock
+      leds.pinOn(shPin22);
       break;
     case 1:
       //five
+      leds.pinOn(shPin6);
       //past
+      leds.pinOn(shPin8);
       break;
     case 2:
       //ten
+      leds.pinOn(shPin2);
       //past
+      leds.pinOn(shPin8);
       break;
     case 3:
       //quarter
+      leds.pinOn(shPin5);
       //past
+      leds.pinOn(shPin8);
       break;
     case 4:
       //twenty
+      leds.pinOn(shPin4);
       //minutes
+      leds.pinOn(shPin7);
       //past
+      leds.pinOn(shPin8);
       break;
     case 5:
       //twenty
+      leds.pinOn(shPin4);
       //five
+      leds.pinOn(shPin6);
       //minutes
+      leds.pinOn(shPin7);
       //past
+      leds.pinOn(shPin8);
       break;
     case 6:
       //half
+      leds.pinOn(shPin3);
       //past
+      leds.pinOn(shPin8);
       break;
     case 7:
-      hour++;
+      hours++;
       //twenty
+      leds.pinOn(shPin4);
       //five
+      leds.pinOn(shPin6);
       //minutes
+      leds.pinOn(shPin7);
       //to
+      leds.pinOn(shPin9);
       break;
     case 8:
-      hour++;
+      hours++;
       //twenty
+      leds.pinOn(shPin4);
       //minutes
+      leds.pinOn(shPin7);
       //to
+      leds.pinOn(shPin9);
       break;
     case 9:
-      hour++;
+      hours++;
       //quarter
+      leds.pinOn(shPin5);
       //to
+      leds.pinOn(shPin9);
       break;
     case 10:
-      hour++;
+      hours++;
       //ten
+      leds.pinOn(shPin2);
       //to
+      leds.pinOn(shPin9);
       break;
     case 11:
-      hour++;
+      hours++;
       //five
+      leds.pinOn(shPin6);
       //to
+      leds.pinOn(shPin9);
       break;  
   }
 
@@ -194,39 +228,51 @@ void setupLeds(byte hours, byte minutes){
   switch (hourBlock){
     case 0:
       //twelve
+      leds.pinOn(shPin21);
       break;
     case 1:
       //one
+      leds.pinOn(shPin10);
       break;
     case 2:
       //two
+      leds.pinOn(shPin11);
       break;
     case 3:
       //three
+      leds.pinOn(shPin12);
       break;
     case 4:
       //four
+      leds.pinOn(shPin13);
       break;
     case 5:
       //five
+      leds.pinOn(shPin14);
       break;
     case 6:
       //six
+      leds.pinOn(shPin15);
       break;
     case 7:
       //seven
+      leds.pinOn(shPin16);
       break;
     case 8:
       //eight
+      leds.pinOn(shPin17);
       break;
     case 9:
       //nine
+      leds.pinOn(shPin18);
       break;
     case 10:
       //ten
+      leds.pinOn(shPin19);
       break;
     case 11:
       //eleven
+      leds.pinOn(shPin20);
       break;  
   }
   
@@ -237,38 +283,50 @@ byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 int hourPressed, minutePressed;
   
 void loop() {
-  Serial.println("Loop started");
+  //Serial.println("Loop started");
 
   //Check if hour adjust is pressed
   hourPressed = digitalRead(hourPin);
-  if(hourPressed == 0){
+  if(hourPressed == 0 && !buttonPressed){
+    buttonPressed = true;
     Serial.println("Hour adjust pressed!");
     incrementHour();
+    timePrinted = false;
   }
 
   //Check if minute adjust is pressed
   minutePressed = digitalRead(minutePin);
-  if(minutePressed == 0){
+  if(minutePressed == 0 && !buttonPressed){
+    buttonPressed = true;
     Serial.println("Minute adjust pressed!");
     incrementMinute();
+    timePrinted = false;
+  }
+
+  if(hourPressed != 0 && minutePressed != 0){
+    buttonPressed = false; 
   }
 
   //Read date from RTC
   getDate(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);
 
   setupLeds(hour, minute);
-  
-  //Print date
-  Serial.print(hour, DEC);
-  
-  Serial.print(":");
-  Serial.print(minute, DEC);
 
-  Serial.print(":");
-  Serial.println(second, DEC);
+  if(buttonPressed && !timePrinted){
+    //Print date
+    Serial.print(hour, DEC);
+    
+    Serial.print(":");
+    Serial.print(minute, DEC);
+  
+    Serial.print(":");
+    Serial.println(second, DEC);
+
+    timePrinted = true;
+  }
 
   //Delay loop
-  delay(1000);
+  delay(2);
 
 }
 
